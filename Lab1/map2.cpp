@@ -1,59 +1,50 @@
 #include <iostream>
-#include <iomanip>
 #include <fstream>
-#include <sstream>
+#include <map>
 #include <string>
+#include <vector>
+#include <algorithm>
 #include <unordered_map>
 
-int main(int argc, char *argv[]){
-    std::string file_name{argv[1]};
+using namespace std;
 
-    // read the data and store them in a map structure
-    std::ifstream fin(file_name, std::ios::in);
-    std::string line;
+int main() {
+    string file_name = "data/full_1000.txt";
 
-    std::unordered_map<std::string, double> mp;
+    map<string, double> data;
+    unordered_multimap<double, string> val_to_id;
+    string id;
+    double value;
 
-    while (std::getline(fin, line)) {
-        std::string id;
-        std::string value;
-        std::istringstream stream(line);
-        
-        stream >> id >> value;
-        mp.insert({id, std::stod(value)});
+    ifstream inputFile(file_name);
+
+    while (inputFile >> id >> value) {
+        data[id] = value;
+        val_to_id.emplace(value, id);
     }
 
-    while(1){
-        // get a query from the user 
-        std::cout << "query> ";
-
-        std::string input;
-        std::cin >> input;
-
-        bool foundValue = false;
-        if(input[0] == '+'){
-            // find all ids and values that deviate 1% from input value
-            double dinput = std::stod(input);
-
-            for (auto &it : mp){
-                if (it.second > (dinput*0.99) && it.second < (dinput*1.01)) {
-                    std::cout << "value[" << (it.first) << "] = " << (it.second) << "\n";
-                    foundValue = true;
+    string query;
+    
+    cout << "query> ";
+    while (cin >> query && query != "END") {
+        if (query[0] == '+') {
+            double value = stod(query);
+            double lower_bound = value * 0.99;
+            double upper_bound = value * 1.01;
+            for (auto it = val_to_id.begin(); it != val_to_id.end(); ++it) {
+                if (it->first >= lower_bound && it->first <= upper_bound) {
+                    cout << "value[" << it->second << "]=" << " " << it->first << endl;
                 }
             }
-            if(foundValue == false) std::cout << "No ID for the given value\n";
-
-        }else{
-
-            // Terminate program with keyword END
-            if(input == "END"){
-                std::cout << "Bye... \n";
-                return 0;
+        } else {
+            if(data.count(query) == 1) {
+                cout << "value[" << query << "]= " << data[query] << endl; 
+            } else {
+                cout << "This ID does not exist" << endl << "query> ";
             }
-
-            // find values to corresponding key
-            (mp.count(input) == 0) ? std::cout << "This ID does not exists\n" : std::cout << "value[" << input << "] = " << mp.at(input) << "\n";
         }
-        
+        cout << "query> ";
     }
+    cout << "Bye..." << endl;
+    return 0;
 }
