@@ -1,38 +1,32 @@
 #include <iostream>
-#include <iomanip>
 #include <fstream>
-#include <sstream>
+#include <map>
 #include <string>
-#include <unordered_map>
 
-int main(int argc, char *argv[]){
-    std::string file_name{argv[1]};
+using namespace std;
 
-    // read the data and store them in a map structure
-    std::ifstream fin(file_name, std::ios::in);
-    std::string line;
-    std::unordered_map<std::string, double> mp;
+int main() {
+    string file_name = "data/full_10.txt";
 
-    while (std::getline(fin, line)) {
-        std::string id;
-        std::string value;
-        std::istringstream stream(line);
-        
-        stream >> id >> value;
-        mp.insert({id, std::stod(value)});
+    map<string, double> data;
+    string id;
+    double value;
+
+    ifstream inputFile(file_name);
+
+    while (inputFile >> id >> value) {
+        data[id] = value;
     }
 
-    while(true){
-        // get a query from the user 
-        std::cout << "query> ";
-        std::string input;
-        std::cin >> input;
-
-        if(input == "END"){
-            std::cout << "Bye...\n";
-            return 0;
+    string query;
+    cout << "query> ";
+    while (cin >> query && query != "END") {
+        if(data.count(query) == 1) {
+                cout << "value[" << query << "]= " << data[query] << endl; 
+        } else {
+            cout << "This ID does not exist" << endl << "query> ";
         }
-        // find values to corresponding key
-        (mp.count(input) == 0) ? std::cout << "This ID does not exists\n" : std::cout << "value[" << input << "] = " << mp.at(input) << "\n";
     }
+    cout << "Bye..." << endl;
+    return 0;
 }
