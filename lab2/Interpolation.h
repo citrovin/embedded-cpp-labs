@@ -2,6 +2,9 @@
 #define INTERPOLATION_H
 
 #include "Point.h"
+#include "Line.h"
+#include <filesystem>
+#include <fstream>
 #include <vector>
 template <typename T>
 class Interpolation {
@@ -36,6 +39,12 @@ public:
 
     // Print each point in the interpolation as (x,y) between point p1 and point p2, but nicely
     void printPretty() const;
+
+    // Method to write the input points and interpolated points to a file
+    void dumpToFile(const std::string file_name);
+
+    // Method to write only the input points to a file
+    void dumpInputsToFile(const std::string file_name);
 
 private:
     // Array of input Point objects
@@ -134,6 +143,56 @@ void Interpolation<T>::printPretty() const {
         }
         std::cout << std::endl;
     }
+}
+
+// Method to write the input points and interpolated points to a file
+template <typename T>
+void Interpolation<T>::dumpToFile(const std::string file_name) {
+    if (!std::filesystem::exists("out")) {
+        std::filesystem::create_directory("out");
+    }
+    std::ofstream file("out/" + file_name);
+
+    // Loop through all the points in the vector except the last one
+    for (int i = 0; i < Interpolation<T>::points.size() - 1; i++) {
+        // Get the current point
+        const Point<T>& point1 = Interpolation<T>::points[i];
+
+        // Write the current point to the file
+        file << point1.getX() << "," << point1.getY() << std::endl;
+
+        // Loop through all the interpolated points
+        for (const auto& interpolated_point : Interpolation<T>::interpolated_points[i]) {
+            // Write the interpolated point to the file
+            file << interpolated_point.getX() << "," << interpolated_point.getY() << std::endl;
+        }
+    }
+
+    // Get the last point in the vector
+    const Point<T>& last_point = Interpolation<T>::points.back();
+
+    // Write the last point to the file
+    file << last_point.getX() << "," << last_point.getY() << std::endl;
+
+    // Close the output file stream
+    file.close();
+}
+
+
+
+
+
+// Method to write only the input points to a file
+template <typename T>
+void Interpolation<T>::dumpInputsToFile(const std::string file_name) {
+    if (!std::filesystem::exists("out")) {
+        std::filesystem::create_directory("out");
+    }
+    std::ofstream file("out/" + file_name);
+    for (const auto& input_point : Interpolation<T>::points) {
+        file << input_point.getX() << "," << input_point.getY() << std::endl;
+    }
+    file.close();
 }
 
 

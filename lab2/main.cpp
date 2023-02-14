@@ -21,5 +21,8 @@ int main() {
     // Print the interpolated points between each input point
     interp.printPretty();
 
+    interp.dumpToFile("interpolation.dat");
+    interp.dumpInputsToFile("input.dat");
+
     return 0;
 }
