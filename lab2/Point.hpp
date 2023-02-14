@@ -1,5 +1,5 @@
-#ifndef POINT_H
-#define POINT_H
+#ifndef POINT_HPP
+#define POINT_HPP
 
 template <typename T>
 class Point {
@@ -98,4 +98,4 @@ void Point<T>::print(bool newline) const {
     std::cout << "(" << x << ", " << y << ")";
 }
 
-#endif // POINT_H
+#endif // POINT_HPP

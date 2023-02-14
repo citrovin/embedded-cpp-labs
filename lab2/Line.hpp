@@ -1,7 +1,7 @@
-#ifndef LINE_H
-#define LINE_H
+#ifndef LINE_HPP
+#define LINE_HPP
 
-#include "Point.h"
+#include "Point.hpp"
 
 template <typename T>
 class Line {
@@ -52,4 +52,4 @@ T Line<T>::yIntercept() const {
     return p1.getY() - slope() * p1.getX();
 }
 
-#endif // LINE_H
+#endif // LINE_HPP

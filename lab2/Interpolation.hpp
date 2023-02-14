@@ -1,8 +1,8 @@
-#ifndef INTERPOLATION_H
-#define INTERPOLATION_H
+#ifndef INTERPOLATION_HPP
+#define INTERPOLATION_HPP
 
-#include "Point.h"
-#include "Line.h"
+#include "Point.hpp"
+#include "Line.hpp"
 #include <filesystem>
 #include <fstream>
 #include <vector>
@@ -196,4 +196,4 @@ void Interpolation<T>::dumpInputsToFile(const std::string file_name) {
 }
 
 
-#endif // INTERPOLATION_H
+#endif // INTERPOLATION_HPP
