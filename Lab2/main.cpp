@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <string>
 #include "include/Point.hpp"
 #include "include/Line.hpp"
 #include "include/Interpolation.hpp"
@@ -8,6 +9,8 @@
 // Command line arguments parsing
 #include "include/program_options.h"
 #include "include/program_options.cpp"
+// For some utils to unclutter my main files
+#include "include/utils.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -51,9 +54,32 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Generate n random points
-    for (int i = 0; i < program_options::num_points; i++) {
-        points.push_back(Point<double>(rand() % 10, rand() % 10));
+    if ( program_options::num_points != -1) {
+        // Generate n random points
+        for (int i = 0; i < program_options::num_points; i++) {
+            points.push_back(Point<double>(rand() % 10, rand() % 10));
+        }
+    } else {
+        const auto input_files = program_options::input_files();
+        
+        if(!input_files.empty()) {
+            // for (const auto& file : input_files) {
+            //     points = readPointsVectorFromFile(file);
+            // }
+
+            // for (auto it = input_files.begin(); it != input_files.end(); ++it) {
+            //     points = readPointsVectorFromFile(*it);
+            // }
+            for (const auto& file_path : input_files){
+                try {
+                    // std::string file_path = "data/input.dat";
+                    points = readPointsVectorFromFile<double>(file_path);
+                } catch (const std::exception& e) {
+                    std::cerr << e.what() << std::endl;
+                    return 1;
+                }
+            }
+        }
     }
 
     // Create interpolation object

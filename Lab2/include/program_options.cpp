@@ -26,9 +26,9 @@ void program_options::parse(int argc, char* argv[]) {
     if(has_option(args, "-s")) {
         samples = std::stoi(get_option(args, "-s"));
     }
-    // if(has_files(args)) {
-    //     // TODO: Read input points vector from file
-    // }
+    if(has_files(args)) {
+        num_points = -1;
+    }
 }
 
 const std::vector<std::string> program_options::input_files() {
@@ -67,14 +67,12 @@ bool program_options::has_option(
 }
 
 bool program_options::has_files(const std::vector<std::string>& args) {
-    bool _file_found = false;
+    bool file_found = false;
     for (const auto& arg : args) {
-        if (!std::filesystem::exists(arg)) {
-            throw std::runtime_error(std::string(arg) + ": No such file or directory");
-        } else {
-            _file_found = true;
+        if (std::filesystem::exists(arg) && std::filesystem::is_regular_file(arg)) {
+            file_found = true;
             _input_files.push_back(arg);
         }
     }
-    return true;
+    return file_found;
 }
