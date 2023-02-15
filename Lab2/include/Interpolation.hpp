@@ -65,9 +65,9 @@ Interpolation<T>::~Interpolation() {}
 template <typename T>
 void Interpolation<T>::linear(int n) {
     // Iterate through all points (cannot be avoided)
-    for (int i = 0; i < Interpolation<T>::points.size(); i++) {
+    for (int i = 0; i < points.size(); i++) {
         // Resize the interpolated_points matrix so we don't get a segmentation fault
-        interpolated_points.resize(interpolated_points.size() + 1);
+        Interpolation<T>::interpolated_points.resize(Interpolation<T>::interpolated_points.size() + 1, std::vector<Point<T>>(0));
 
         // Instantiate the line made by point i and i+1
         Line<T> line(Interpolation<T>::points[i], Interpolation<T>::points[i+1]);
@@ -81,7 +81,7 @@ void Interpolation<T>::linear(int n) {
         T x2 = line.getP2().getX();
 
         // Calculate increment to get n number of points between x of point i and x of point i+1
-        auto increment = (-x1 + x2)/(n+1);
+        auto increment = (x2 - x1)/(n+1);
 
         // Check if increment is != 0, otherwise we have a vertical line and we need to assign points vertically
         // TODO: This if - else is messy, can be improved
@@ -101,7 +101,7 @@ void Interpolation<T>::linear(int n) {
             T y2 = line.getP2().getY();
 
             // Calculate increment to get n number of points between y of point i and y of point i+1
-            auto increment = (-y1 + y2)/(n+1);
+            auto increment = (y2 - y1)/(n+1);
 
             // Compute each point and store it in vector
             for (int j = 1; j <= n; j++) {
