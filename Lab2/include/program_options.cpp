@@ -14,6 +14,7 @@ static bool _show_line_numbers = false;
 static bool _show_ends = false;
 static int num_points;
 static int samples;
+static std::string method;
 
 }  // namespace
 
@@ -29,6 +30,9 @@ void program_options::parse(int argc, char* argv[]) {
     if(has_files(args)) {
         num_points = -1;
     }
+    if(has_option(args, "-m")){
+        method = get_option(args, "-m");
+    } 
 }
 
 const std::vector<std::string> program_options::input_files() {

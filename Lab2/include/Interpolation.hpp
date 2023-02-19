@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <Eigen/Dense>
+
 template <typename T>
 class Interpolation {
 public:
@@ -46,9 +48,20 @@ public:
     // Method to write only the input points to a file
     void dumpInputsToFile(const std::string file_name);
 
+    // Method to clear the currently interpolated points
+    void clearInterpolatedPoints();
+
+    // Spline interpolation method (cubic).
+    void spline(int n);
+
+    // Sort input points
+    void sort();
+
 private:
     // Array of input Point objects
     std::vector<Point<T>> points;
+    // Backup of the unsorted input Points
+    std::vector<Point<T>> backup_points;
     // Matrix of interpolated Point objects
     std::vector<std::vector<Point<T>>> interpolated_points;
 };
@@ -64,7 +77,7 @@ Interpolation<T>::~Interpolation() {}
 // Linear interpolation with n samples
 template <typename T>
 void Interpolation<T>::linear(int n) {
-    // Iterate through all points (cannot be avoided)
+    // Iterate through all points
     for (int i = 0; i < points.size(); i++) {
         // Resize the interpolated_points matrix so we don't get a segmentation fault
         Interpolation<T>::interpolated_points.resize(Interpolation<T>::interpolated_points.size() + 1, std::vector<Point<T>>(0));
@@ -178,10 +191,6 @@ void Interpolation<T>::dumpToFile(const std::string file_name) {
     file.close();
 }
 
-
-
-
-
 // Method to write only the input points to a file
 template <typename T>
 void Interpolation<T>::dumpInputsToFile(const std::string file_name) {
@@ -193,6 +202,109 @@ void Interpolation<T>::dumpInputsToFile(const std::string file_name) {
         file << input_point.getX() << "," << input_point.getY() << std::endl;
     }
     file.close();
+}
+
+// Spline interpolation unoptimized algorithm with n samples
+template <typename T>
+void Interpolation<T>::spline(int n) {
+    // Clear our current points before interpolating again
+    Interpolation<T>::clearInterpolatedPoints();
+
+    // Sort our input points
+    Interpolation<T>::sort();
+    
+    // Define the size of the input array
+    int nr_input_points = Interpolation<T>::points.size();
+
+    // Cycle through input points
+    for (int i = 0; i < nr_input_points; i++) {
+        // Resize the interpolated_points matrix so we don't get a segmentation fault
+        Interpolation<T>::interpolated_points.resize(Interpolation<T>::interpolated_points.size() + 2, std::vector<Point<T>>(0));
+
+        // Get x1, x2, y1, and y2 for notation convenience
+        T x1 = Interpolation<T>::points[i].getX();
+        T x2 = Interpolation<T>::points[i+1].getX();
+        T x3 = Interpolation<T>::points[i+2].getX();
+        T y1 = Interpolation<T>::points[i].getY();
+        T y2 = Interpolation<T>::points[i+1].getY();
+        T y3 = Interpolation<T>::points[i+2].getY();
+
+        // Define tridimensional matrix
+        Eigen::Matrix3d A;
+
+        double dx21 = x2 - x1;
+        double dx32 = x3 - x2;
+
+        double dy21 = y2-y1;
+        double dy32 = y3-y2;
+
+        double a11 = 2/dx21;
+        double a12 = 1/dx21;
+        double a21 = 1/dx21;
+        double a22 = 2*((1/dx21)+(1/dx32));
+        double a23 = 1/dx32;
+        double a32 = 1/dx32;
+        double a33 = 2/dx32;
+
+        double _b1 = 3*(dy21/pow(dx21,2));
+        double _b2 = 3*((dy21/pow(dx21,2))+(dy32/pow(dx32,2)));
+        double _b3 = 3*(dy32/pow(dx32,2));
+
+        Eigen::Vector3d B(_b1,_b2,_b3);
+
+        A << a11, a12, 0,
+            a21, a22, a23,
+            0, a32, a33;
+
+        Eigen::VectorXd K = A.colPivHouseholderQr().solve(B);
+
+        auto k1 = K(0);
+        auto k2 = K(1);
+        auto k3 = K(2);
+
+        auto a1 = (k1*(dx21))-dy21;
+        auto b1 = ((-k2)*(dx21))+dy21;
+        auto a2 = ((k2*dx32)-dy32);
+        auto b2 = (((-k3)*dx32)+dy32);
+
+
+
+        for (int j = 0; j < n; j++) {
+            auto new_x1 = x1 + ((x2-x1)/(n))*j;
+            // auto new_x2 = x2 + ((x3-x2)/(n+1))*j;
+
+            // Compute t(x)
+            auto t = (new_x1 - x1)/(x2 - x1);
+            // auto t_2 = (new_x2 - x2)/(x3 - x2);
+
+            // Compute y = q(x)
+            auto new_y1 = (1-t)*y1 + t*y2 + t*(1-t)*((1-t)*a1 + t*b1);
+            // auto new_y2 = (1-t_2)*y2 + t_2*y3 + t_2*(1-t_2)*((1-t_2)*a2 + t_2*b2);
+
+            // Define a new point
+            Point<T> point1(new_x1, new_y1);
+
+            // Add the new point to our interpolation
+            Interpolation<T>::interpolated_points[i].push_back(point1);
+        }
+    }
+}
+
+template <typename T>
+void Interpolation<T>::clearInterpolatedPoints() {
+    Interpolation<T>::interpolated_points.clear();
+}
+
+template <typename T>
+void Interpolation<T>::sort() {
+    // Save our initial input points if we need them later
+    backup_points = points;
+
+    // Define a lambda to compare x
+    auto comparePoints = [](const Point<T>& a, const Point<T>& b) { return a.getX() < b.getX(); };
+
+    // Sort the points ascending
+    std::sort(points.begin(), points.end(), comparePoints);
 }
 
 

@@ -22,6 +22,8 @@ namespace program_options {
     // TODO: print how many samples were generated
     int samples = 3; // interpolate between them in 3 samples by default
 
+    std::string method = "spline";
+
 };  // namespace program_options
 
 #endif  // THAT_THIS_PROGRAM_OPTIONS_HEADER_FILE_IS_ALREADY_INCLUDED

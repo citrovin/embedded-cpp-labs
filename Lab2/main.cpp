@@ -85,9 +85,14 @@ int main(int argc, char *argv[]) {
     // Create interpolation object
     Interpolation<double> interp(points);
 
-    // Interpolate the points with s samples
-    interp.linear(program_options::samples);
-
+    if (program_options::method == "linear") {
+        // Interpolate the points with s samples
+        interp.linear(program_options::samples);
+    } else if (program_options::method == "spline") {
+        interp.spline(program_options::samples);
+    } else {
+        std::cerr << "\nNo such method as " << program_options::method;
+    }
     // Print the interpolated points between each input point
     interp.printPretty();
 

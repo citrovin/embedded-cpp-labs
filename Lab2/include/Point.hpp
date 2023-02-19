@@ -56,13 +56,13 @@ T Point<T>::getY() const {
 // setX implementation
 template <typename T>
 void Point<T>::setX(T x) {
-    this->x = x;
+    this->x = (T)x;
 }
 
 // setY implementation
 template <typename T>
 void Point<T>::setY(T y) {
-    this->y = y;
+    this->y = (T)y;
 }
 
 // Overloaded operator+ implementation
