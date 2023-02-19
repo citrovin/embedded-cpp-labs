@@ -24,12 +24,8 @@ def plot_data(file_path1, file_path2):
     x1, y1 = read_data(file_path1)
     x2, y2 = read_data(file_path2)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-    ax1.plot(x1, y1, 'ro-')
-    ax2.plot(x2, y2, 'bo-')
-
-    ax1.set_title("Input points")
-    ax2.set_title("Interpolated")
+    plt.plot(x1, y1, 'ro-', label="Input points")
+    plt.plot(x2, y2, 'b-', label="Interpolated")
 
     plt.tight_layout()
     plt.show()
