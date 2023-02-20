@@ -25,7 +25,9 @@ def plot_data(file_path1, file_path2):
     x2, y2 = read_data(file_path2)
 
     plt.plot(x1, y1, 'ro-', label="Input points")
-    plt.plot(x2, y2, 'b-', label="Interpolated")
+    plt.plot(x2, y2, 'bo-', label="Interpolated")
+
+    plt.legend()
 
     plt.tight_layout()
     plt.show()
