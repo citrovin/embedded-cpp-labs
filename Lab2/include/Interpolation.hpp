@@ -57,6 +57,9 @@ public:
     // Sort input points
     void sort();
 
+    // For a sorted vector of input points, remove all subsequent points with the same x-coord
+    void removeDuplicateX();
+
 private:
     // Array of input Point objects
     std::vector<Point<T>> points;
@@ -212,74 +215,74 @@ void Interpolation<T>::spline(int n) {
 
     // Sort our input points
     Interpolation<T>::sort();
+
+    // Remove duplicate x
+    Interpolation<T>::removeDuplicateX();
     
     // Define the size of the input array
     int nr_input_points = Interpolation<T>::points.size();
 
-    // Cycle through input points
+    if (nr_input_points < 3) {
+        // When there are not enough points
+        return;
+    }
+
+    // Define vectors for x and y
+    std::vector<T> x(nr_input_points);
+    std::vector<T> y(nr_input_points);
+
+    // Copy points into vectors for notation efficiency
     for (int i = 0; i < nr_input_points; i++) {
-        // Resize the interpolated_points matrix so we don't get a segmentation fault
-        Interpolation<T>::interpolated_points.resize(Interpolation<T>::interpolated_points.size() + 2, std::vector<Point<T>>(0));
+        x[i] = points[i].getX();
+        y[i] = points[i].getY();
+    }
 
-        // Get x1, x2, y1, and y2 for notation convenience
-        T x1 = Interpolation<T>::points[i].getX();
-        T x2 = Interpolation<T>::points[i+1].getX();
-        T x3 = Interpolation<T>::points[i+2].getX();
-        T y1 = Interpolation<T>::points[i].getY();
-        T y2 = Interpolation<T>::points[i+1].getY();
-        T y3 = Interpolation<T>::points[i+2].getY();
+    // Resize the interpolated_points matrix so we don't get a segmentation fault
+    Interpolation<T>::interpolated_points.resize(nr_input_points-1, std::vector<Point<T>>(0));
 
-        // Define tridimensional matrix
-        Eigen::Matrix3d A;
+    // Define matrix A
+    Eigen::MatrixXd A(nr_input_points, nr_input_points);
+    A.setZero();
 
-        double dx21 = x2 - x1;
-        double dx32 = x3 - x2;
+    for (int i = 1; i < nr_input_points-1; i++) {
+        double dx1 = x[i] - x[i-1];
+        double dx2 = x[i+1] - x[i];
+        double dy1 = y[i] - y[i-1];
+        double dy2 = y[i+1] - y[i];
+        double a = dx2 / (dx1 + dx2);
+        double b = 1 - a;
+        A(i, i-1) = dx1 * dy2 / (dx1 + dx2);
+        A(i, i) = 2 * dx1 * dx2 * (dx1 + dx2 + 2 * dy1) / (dx1 + dx2) / (dx1 + dx2 + dy1 + dy2);
+        A(i, i+1) = dx2 * dy1 / (dx1 + dx2);
+    }
 
-        double dy21 = y2-y1;
-        double dy32 = y3-y2;
+    // Special case for the first and last rows
+    A(0, 0) = 1;
+    A(nr_input_points-1, nr_input_points-1) = 1;
+    
+    // Define B
+    Eigen::VectorXd B(nr_input_points);
+    B(0) = 3 * (y[1] - y[0]);
+    B(nr_input_points-1) = 3 * (y[nr_input_points-1] - y[nr_input_points-2]);
+    for (int i = 1; i < nr_input_points-1; i++) {
+        B(i) = 3 * (y[i+1] - y[i-1]);
+    }
 
-        double a11 = 2/dx21;
-        double a12 = 1/dx21;
-        double a21 = 1/dx21;
-        double a22 = 2*((1/dx21)+(1/dx32));
-        double a23 = 1/dx32;
-        double a32 = 1/dx32;
-        double a33 = 2/dx32;
+    Eigen::VectorXd K = A.colPivHouseholderQr().solve(B);
 
-        double _b1 = 3*(dy21/pow(dx21,2));
-        double _b2 = 3*((dy21/pow(dx21,2))+(dy32/pow(dx32,2)));
-        double _b3 = 3*(dy32/pow(dx32,2));
+    for (int i = 0; i < nr_input_points-1; i++) {
+        auto a = (K(i)*(x[i+1]-x[i]))-(y[i+1]-y[i]);
+        auto b = ((-K(i+1))*(x[i+1]-x[i]))+(y[i+1]-y[i]);
 
-        Eigen::Vector3d B(_b1,_b2,_b3);
-
-        A << a11, a12, 0,
-            a21, a22, a23,
-            0, a32, a33;
-
-        Eigen::VectorXd K = A.colPivHouseholderQr().solve(B);
-
-        auto k1 = K(0);
-        auto k2 = K(1);
-        auto k3 = K(2);
-
-        auto a1 = (k1*(dx21))-dy21;
-        auto b1 = ((-k2)*(dx21))+dy21;
-        auto a2 = ((k2*dx32)-dy32);
-        auto b2 = (((-k3)*dx32)+dy32);
-
-
-
-        for (int j = 0; j < n; j++) {
-            auto new_x1 = x1 + ((x2-x1)/(n))*j;
-            // auto new_x2 = x2 + ((x3-x2)/(n+1))*j;
+        for (int j = 1; j <= n; j++) {
+            // Compute new x
+            auto new_x1 = x[i] + ((x[i+1]-x[i])/(n+1))*j;
 
             // Compute t(x)
-            auto t = (new_x1 - x1)/(x2 - x1);
-            // auto t_2 = (new_x2 - x2)/(x3 - x2);
+            auto t = (new_x1 - x[i])/(x[i+1] - x[i]);
 
             // Compute y = q(x)
-            auto new_y1 = (1-t)*y1 + t*y2 + t*(1-t)*((1-t)*a1 + t*b1);
-            // auto new_y2 = (1-t_2)*y2 + t_2*y3 + t_2*(1-t_2)*((1-t_2)*a2 + t_2*b2);
+            auto new_y1 = (1-t)*y[i] + t*y[i+1] + t*(1-t)*((1-t)*a + t*b);
 
             // Define a new point
             Point<T> point1(new_x1, new_y1);
@@ -306,6 +309,24 @@ void Interpolation<T>::sort() {
     // Sort the points ascending
     std::sort(points.begin(), points.end(), comparePoints);
 }
+
+template <typename T>
+void Interpolation<T>::removeDuplicateX() {
+    // Check if we sorted the points and sort if not
+    if(backup_points.empty()) {
+        sort();
+    }
+
+    // Create a lambda to check for the x-coordinates
+    auto it = std::unique(points.begin(), points.end(), [](const auto& a, const auto& b) {
+        return a.getX() == b.getX();
+    });
+
+    // Erase using unique
+    points.erase(it, points.end());
+}
+
+
 
 
 #endif // INTERPOLATION_HPP
